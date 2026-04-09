@@ -96,18 +96,6 @@ func ChatCompletionsHandler(d Dependencies) http.HandlerFunc {
 			return
 		}
 
-		// Slack mention gate: if the requesting agent is not @mentioned in a
-		// Slack channel message, return a silent no-op response without
-		// invoking any model backend.  This prevents agents that listen to all
-		// messages from generating unsolicited replies.
-		if keyRec := apikey.FromContext(r.Context()); slackMentionRequired(req.Messages, keyRec) {
-			reqID := middleware.GetReqID(r.Context())
-			noopResp := buildCompletionsResponse(reqID, req.Model, []byte(`{"choices":[{"index":0,"message":{"role":"assistant","content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":0,"completion_tokens":0,"total_tokens":0}}`))
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(noopResp)
-			return
-		}
-
 		// Build parameters map from optional fields.
 		params := make(map[string]any)
 		if req.Temperature != nil {
